@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Carlos Alvarez, Theme designer & developer living in Madrid, Spain.">
+    <meta name="author" content="Carlos Alvarez">
+    <link rel="shortcut icon" href="assets/ico/favicon.png">
+
+    <title>Ummo -- Speech Coaching</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet">
+    <link href="assets/css/font-awesome.min.css" rel="stylesheet">
+
+
+    <!-- Custom styles for this template -->
+    <link href="assets/css/main.css" rel="stylesheet">
+
+    <!-- Load c3.css for gauge chart -->
+    <link href="assets/css/c3.min.css" rel="stylesheet" type="text/css">
+
+    <link href='http://fonts.googleapis.com/css?family=Oswald:400,300,700' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=EB+Garamond' rel='stylesheet' type='text/css'>
+
+
+    <!-- Just for debugging purposes. Don't actually copy this line! -->
+    <!--[if lt IE 9]><script src="../../docs-assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
+
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+      <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+    <![endif]-->
+</head>
+
+<body>
+
+
+    <div class="container" style="margin-top: 0px;">
+        <div class="row centered">
+            <div class="col-lg-8 col-lg-offset-2 w">
+                <img src="assets/img/ummologo.png"/ style="width:30%; height: 30%;">
+                <!--<h1>ummo</h1>-->
+                <h2>Your personalized speech coach.</h2>
+            </div>
+        </div>
+        <div class="row centered" style="margin-top:100px;">
+            <div id="volumeGaugeDiv" class="col-md-3" style="margin-top:-80px; display: none;">
+                <div id="volumeGauge">
+                </div>
+                <div id="vol">Volume</div>
+            </div>
+            <div id="centralcolwithtoggle" class="col-lg-12">
+                <div class="switch">
+                    <input id="cmn-toggle-4" class="cmn-toggle cmn-toggle-round-flat" type="checkbox">
+                    <label style="margin: auto;" for="cmn-toggle-4"></label>
+                </div>
+                <div id="timerdiv">
+                    <p id="clockelement" class="inactive"></p>
+                </div>
+            </div>
+            <div id="pitchGaugeDiv" class="col-md-3" style="margin-top:-80px;  display: none;">
+                <div id="pitchGauge">
+                </div>
+                <div id="pitch">Pitch</div>
+            </div>
+        </div>
+    </div>
+    <!-- /.container -->
+
+    <div class="container">
+        <div class="row w centered">
+            <br>
+            <div class="col-lg-6 col-lg-offset-3">
+                <span id="final_span" class="final-result"></span>
+                <span id="interim_span" class="interim-result">Start recording your voice, your spoken words will show up here.</span>
+                <!--
+                <p id="convertedtext" class="interim-result">Start recording your voice, the converted text will show up here.</p>
+                -->
+            </div>
+        </div>
+    </div>
+
+    <div class="container" style="margin-top: 100px;">
+        <div class="row centered">
+            <!--
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Word</th>
+                        <th>Time (sec)</th>
+                        <th>Volume</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th>Hi</th>
+                        <th>Bye</th>
+                        <th>Yes</th>
+                    </tr>
+                    <tr>
+                        <th>Hi</th>
+                        <th>Bye</th>
+                        <th>Yes</th>
+                    </tr>
+                    <tr>
+                        <th>Hi</th>
+                        <th>Bye</th>
+                        <th>Yes</th>
+                    </tr>
+                </tbody>
+            </table>
+            -->
+            <style>
+                .canvasjs-chart-credit{
+                    display:none;   
+                }
+            </style>
+            <div id="colAllWords" class="col-md-6">
+                <div id="allWordGraph" style="width:100%; height:300px;"></div>
+            </div>
+            <div id="colFillerWords" class="col-md-6">
+                <div id="fillerWordGraph" style="width:100%; height:300px;"></div>
+            </div>
+        </div>
+    </div>
+    <div class="footer"></div>
+
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+    <script src="assets/js/bootstrap.min.js"></script>
+    <script src="assets/js/d3.min.js"></script>
+    <script src="assets/js/c3.min.js"></script>
+    <script type="text/javascript" src="assets/js/volumemeter.js"></script>
+    <script type="text/javascript" src="assets/js/pitchdetector.js"></script>
+    <script type="text/javascript" src="assets/js/jquery.canvasjs.min.js"></script>
+    <script src="assets/js/eloquyvoicerecognition.js"></script>
+
+    <script>
+        $('input[type=checkbox]').change(function () {
+            var checked = $("#cmn-toggle-4").is(":checked");
+            //console.log('box is now: '+checked);
+            if (checked) {
+                $("#fillerWordGraph").hide();
+                $("#allWordGraph").hide();
+                startRecognitionAndAnalysis();
+            } else {
+                stopRecognitionAndAnalysis();
+                
+            }
+        });
+
+        $('.tooltip-demo').tooltip({
+            selector: "[data-toggle=tooltip]",
+            container: "body"
+        })
+        
+        $("#allWordGraph").CanvasJSChart({ //Pass chart options
+		title: {
+                text: "Your top 10 words",
+                fontFamily: 'Oswald', 
+                fontColor: "#555555",
+                fontWeight: 300,
+                fontSize: 28
+
+            },
+            animationEnabled: true,
+            axisY: {
+                tickThickness: 0,
+                lineThickness: 0,
+                valueFormatString: " ",
+                gridThickness: 0                    
+            },
+            axisX: {
+                tickThickness: 0,
+                lineThickness: 0,
+                labelFontSize: 18,
+                labelFontColor: "Peru"
+
+            },
+            data: [
+            {
+                indexLabelFontSize: 14,
+                toolTipContent: "<span style='\"'color: {color};'\"'><strong>{indexLabel}  </strong></span><span style='\"'font-size: 20px; color:peru '\"'><strong>{y}</strong></span>",
+
+                indexLabelPlacement: "inside",
+                indexLabelFontColor: "white",
+                indexLabelFontWeight: 300,
+                indexLabelFontFamily: "Helvetica Neue",
+                color: "#999",
+                type: "bar",
+                dataPoints: [
+                    { y: 21, label: "21", indexLabel: "Video" },
+                    { y: 25, label: "25", indexLabel: "Dining" },
+                    { y: 33, label: "33", indexLabel: "Entertainment" },
+                    { y: 36, label: "36", indexLabel: "News" },
+                    { y: 42, label: "42", indexLabel: "Music" },
+                    { y: 49, label: "49", indexLabel: "Social Networking" },
+                    { y: 50, label: "50", indexLabel: "Maps/ Search" },
+                    { y: 55, label: "55", indexLabel: "Weather" },
+                    { y: 61, label: "61", indexLabel: "Games" }
+
+
+                ]
+            }
+            ]
+
+        });
+        
+        $("#fillerWordGraph").CanvasJSChart({ //Pass chart options
+		title: {
+                text: "Filler words you used",
+                fontFamily: 'Oswald', 
+                fontColor: "#555555",
+                fontWeight: 300,
+                fontSize: 28
+
+            },
+            animationEnabled: true,
+            axisY: {
+                tickThickness: 0,
+                lineThickness: 0,
+                valueFormatString: " ",
+                gridThickness: 0                    
+            },
+            axisX: {
+                tickThickness: 0,
+                lineThickness: 0,
+                labelFontSize: 18,
+                labelFontColor: "Peru"
+
+            },
+            data: [
+            {
+                indexLabelFontSize: 14,
+                toolTipContent: "<span style='\"'color: {color};'\"'><strong>{indexLabel}  </strong></span><span style='\"'font-size: 20px; color:peru '\"'><strong>{y}</strong></span>",
+
+                indexLabelPlacement: "inside",
+                indexLabelFontColor: "white",
+                indexLabelFontWeight: 300,
+                indexLabelFontFamily: "Helvetica Neue",
+                color: "#62C9C3",
+                type: "bar",
+                dataPoints: [
+                    { y: 1, label: "1", indexLabel: "literally" },
+                    { y: 3, label: "3", indexLabel: "you know" },
+                    { y: 4, label: "4", indexLabel: "I mean" },
+                    { y: 7, label: "7", indexLabel: "so" },
+                    { y: 8, label: "8", indexLabel: "like" }
+                ]
+            }
+            ]
+
+        });
+        
+        $("#fillerWordGraph").hide();
+        $("#allWordGraph").hide();
+        
+    </script>
+
+
+    <!--BACKSTRETCH-->
+    <!-- You can use an image of whatever size. This script will stretch to fit in any screen size.-->
+    <!--
+    <script type="text/javascript" src="assets/js/jquery.backstretch.min.js"></script>
+    <script>
+        $.backstretch("assets/img/bg.jpg", {speed: 500});
+    </script>
+    -->
+
+</body>
+
+</html>
